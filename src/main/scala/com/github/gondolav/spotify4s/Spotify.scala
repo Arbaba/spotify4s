@@ -403,6 +403,19 @@ final class Spotify(authFlow: AuthFlow) {
     val res = read[Map[String, List[ArtistJson]]](req.text)
     Right(res("artists").map(Artist.fromJson))
   }
+  
+  /**
+   * Get information about a user’s available devices.
+   * 
+   * @return a List of [[Device]]s on success, otherwise it returns [[Error]]
+   */
+  def getDevices(): Either[Error, List[Device]] = withErrorHandling {
+    val req = requests.get(f"$endpoint/me/player/devices",
+    headers = List(("Authorization", f"Bearer ${authObj.accessToken}"), ("Content-Type", "application/json")))
+    
+    val res = read[Map[String, List[DeviceJson]]](req.text)
+    Right(res("devices").map(Device.fromJson))
+  }
 
   /**
    * Gets Spotify catalog information for a single episode identified by its unique Spotify ID.
