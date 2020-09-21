@@ -403,19 +403,6 @@ final class Spotify(authFlow: AuthFlow) {
     val res = read[Map[String, List[ArtistJson]]](req.text)
     Right(res("artists").map(Artist.fromJson))
   }
-  
-  /**
-   * Get information about a user’s available devices.
-   * 
-   * @return a List of [[Device]]s on success, otherwise it returns [[Error]]
-   */
-  def getDevices(): Either[Error, List[Device]] = withErrorHandling {
-    val req = requests.get(f"$endpoint/me/player/devices",
-    headers = List(("Authorization", f"Bearer ${authObj.accessToken}"), ("Content-Type", "application/json")))
-    
-    val res = read[Map[String, List[DeviceJson]]](req.text)
-    Right(res("devices").map(Device.fromJson))
-  }
 
   /**
    * Gets Spotify catalog information for a single episode identified by its unique Spotify ID.
@@ -1663,6 +1650,105 @@ final class Spotify(authFlow: AuthFlow) {
     if (req.statusCode != 202) Left(read[Error](req.text))
     else Right(())
   }
+
+  
+  /**
+   * Add an item to the end of the user’s current playback queue.
+   * 
+   * A completed request will return a 204 NO CONTENT response code, and then issue the command to the player. 
+   * Due to the asynchronous nature of the issuance of the command, you should use the Get Information About The User’s Current Playback endpoint 
+   * to check that your issued command was handled correctly by the player. 
+   * When performing an action that is restricted, 404 NOT FOUND or 403 FORBIDDEN will be returned together with a player error message. 
+   * For example, if there are no active devices found, the request will return 404 NOT FOUND response code and the reason NO_ACTIVE_DEVICE, or, if the user
+   * making the request is non-premium, a 403 FORBIDDEN response code will be returned together with the PREMIUM_REQUIRED reason.
+   * 
+   * @param uri The uri of the item to add to the queue. Must be a track or an episode uri.
+   * @param device_id (optional) The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+   */
+  def playbackEnqueue(uri: String, device_id: Option[String] = None): Either[Error, Unit] = ???
+
+
+  /**
+   * Get information about a user’s available devices.
+   * 
+   * Reading the list of available devices requires the user-read-playback-state scope.
+   * 
+   * This functionality uses the Spotify Player API which is still in BETA version and might be subject to changes.
+   * @return a List of [[Device]]s on success, otherwise it returns [[Error]]
+   */
+  def getDevices(): Either[Error, List[Device]] = withErrorHandling {
+    val req = requests.get(f"$endpoint/me/player/devices",
+    headers = List(("Authorization", f"Bearer ${authObj.accessToken}"), ("Content-Type", "application/json")))
+    
+    val res = read[Map[String, List[DeviceJson]]](req.text)
+    Right(res("devices").map(Device.fromJson))
+  }
+
+
+  /**
+  * Get information about the user’s current playback state, including track or episode, progress, and active device.
+  *
+  * Reading the user-read-playback-state scope.
+  * 
+  * The information returned is for the last known state, which means an inactive [[Device]] could be returned if it was the last one to execute playback.
+  * 
+  * This functionality uses the Spotify Player API which is still in BETA version and might be subject to changes.
+  * 
+  * @param market           (optional) an ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
+  * @param additional_types (optional) A list of item types that your client supports besides the default track type. 
+  *                         Valid types are: [[TrackObj]] and [[EpisodeObj]]. An unsupported type in the response is expected to be represented as null value in the item field. 
+  *                         Note: This parameter was introduced to allow existing clients to maintain their current behaviour and might be deprecated in the future. 
+  *                         In addition to providing this parameter, make sure that your client properly handles cases of new types in the future by checking against the currently_playing_type field
+  * 
+  * @return a [[Playback]] Option which is None when no available devices are found, otherwise it returns [[Error]]
+  *         
+  */ 
+  def getCurrentPlayBack(market: Option[String] = None, additional_types: List[ObjectType]): Either[Error, Option[Playback]] = ???
+
+
+  /**
+   * Get tracks from the current user’s recently played tracks
+   * 
+   */
+  def getRecentlyPlayedTracks(limit: Option[String], after: Option[Integer], before: Option[Integer]): Either[Error, PlayHistory] = ???
+
+
+  /**
+   * Get the object currently being played on the user’s Spotify account.
+   */
+  def getCurrentPlay(market: Option[String], additional_types: Option[String]): Either[Error, PlayContext] = ???
+
+  /**
+   * Pause playback on the user’s account.
+   */
+  def pausePlayback(device_id: Option[String]): Either[Error, Unit] = ???
+
+  /**
+   * Seeks to the given position in the user’s currently playing track.
+   */
+  def seekPlayback(position: Integer, device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def setRepeatPlayback(state: String, device_id: Option[String]): Either[Error, Unit] = ???
+
+  
+  def setPlaybackVolume(volume_percent: Integer, device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def skipTrackPlayback(device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def previousTrackPlayback(device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def startPlayback(device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def shufflePlayback(shuffle: Boolean, device_id: Option[String]): Either[Error, Unit] = ???
+
+
+  def transferPlayback(device_id: String, play: Option[Boolean]): Either[Error, Unit] = ???
+
 
   private case class RemovePlaylistItemsRequestTrack(uri: String, positions: List[Int] = null)
 
